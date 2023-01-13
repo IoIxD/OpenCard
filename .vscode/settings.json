@@ -1,0 +1,4 @@
+{
+    "rust-analyzer.trace.server": "verbose",
+    "rust-analyzer.server.extraEnv": null
+}
