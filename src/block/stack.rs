@@ -9,6 +9,7 @@ use super::card::Card;
 use super::font::Font;
 use super::style::Style;
 
+use crate::data_layout::BlockLayoutGeneric as gen;
 use crate::data_layout::StackDataLayout as st;
 
 #[derive(Debug)]
@@ -89,12 +90,7 @@ impl Stack<'_> {
 
         // If it's a valid file we should see block type "STAK" at this position.
         let name = &bytes[st::BlockTypeStart()..st::BlockTypeEnd()];
-        let block_type = match str::from_utf8(name) {
-            Ok(a) => a,
-            Err(err) => {
-                return Err(ErrReport::from(err));
-            }
-        };
+        let block_type = str::from_utf8(name)?;
         if block_type != "STAK" {
             return Err(eyre!("Provided file is not a valid HyperCard file; Stack block not found."));
         }
@@ -112,10 +108,83 @@ impl Stack<'_> {
             11..=u32::MAX => StackFormat::Unsupported,
         };
 
-        println!("Loading a {:?} format file",format);
+        println!("Loading a {:?} formatted stack",format);
 
-        // size/allocatin values
-        
+        // backgrounds
+        let backgrounds: Vec<Background> = Vec::new();
+        let cards: Vec<Card> = Vec::new();
+
+        // get any values that don't need to be malformed or "changed" later here, in the order they
+        // appear in the file. this improves load times a bit on older hard drives.
+
+        // misc. shit
+        let password_hash = byte::u32_from_u8(&bytes[st::PasswordHashStart()..st::PasswordHashEnd()]);
+        let protection_flags = byte::u16_from_u8(&bytes[st::ProtFlagsStart()..st::ProtFlagsEnd()]);
+        let hypercard_version_at_creation = byte::u32_from_u8(&bytes[st::HyperCardVersionAtCreationStart()..st::HyperCardVersionAtCreationEnd()]);
+        let hypercard_version_at_last_compacting = byte::u32_from_u8(&bytes[st::HyperCardVersionAtLastCompactingStart()..st::HyperCardVersionAtLastCompactingEnd()]);
+        let hypercard_version_at_last_modification_since_last_compacting = byte::u32_from_u8(&bytes[st::HyperCardVersionAtLastModificationSinceLastCompactingStart()..st::HyperCardVersionAtLastModificationSinceLastCompactingEnd()]);
+        let hypercard_version_at_last_modification = byte::u32_from_u8(&bytes[st::HyperCardVersionAtLastModificationStart()..st::HyperCardVersionAtLastModificationEnd()]);
+
+        // positioning
+        let win_top = byte::u16_from_u8(&bytes[st::CardWindowTopStart()..st::CardWindowTopEnd()]);
+        let win_left = byte::u16_from_u8(&bytes[st::CardWindowLeftStart()..st::CardWindowLeftEnd()]);
+        let win_bottom = byte::u16_from_u8(&bytes[st::CardWindowBottomStart()..st::CardWindowBottomEnd()]);
+        let win_right = byte::u16_from_u8(&bytes[st::CardWindowRightStart()..st::CardWindowRightEnd()]);
+        let scr_top = byte::u16_from_u8(&bytes[st::ScreenTopStart()..st::ScreenTopEnd()]);
+        let scr_left = byte::u16_from_u8(&bytes[st::ScreenLeftStart()..st::ScreenLeftEnd()]);
+        let scr_bottom = byte::u16_from_u8(&bytes[st::ScreenBottomStart()..st::ScreenBottomEnd()]);
+        let scr_right = byte::u16_from_u8(&bytes[st::ScreenRightStart()..st::ScreenRightEnd()]);
+        let x_coord = byte::u16_from_u8(&bytes[st::XCoordStart()..st::XCoordEnd()]);
+        let y_coord = byte::u16_from_u8(&bytes[st::YCoordStart()..st::YCoordEnd()]);
+
+        let width = byte::u16_from_u8(&bytes[st::WidthStart()..st::WidthEnd()]);
+        let height = byte::u16_from_u8(&bytes[st::HeightStart()..st::HeightEnd()]);
+
+        // tables
+        let font_table: Vec<&Font> = Vec::new();
+        let style_table: Vec<&Style> = Vec::new();
+
+        // skip to 0x600 and get the stack script, which is terminated by 0x00
+        let mut offset = 0x601;
+        let mut stack: Vec<u8> = Vec::new();
+        loop {
+            let ch = (&bytes)[offset];
+            if ch == 0 {
+                break;
+            }
+            stack.push(ch);
+            offset += 1;
+        }
+        let code = str::from_utf8(&stack);
+
+        // skip to 0x800. we should see the master block.
+        offset = 0x800;
+        let block_type = str::from_utf8(&bytes[offset+gen::BlockTypeStart()..offset+gen::BlockTypeEnd()])?;
+        if block_type != "MAST" {
+            return Err(eyre!("Stack block was not followed up by a master block. Not continuing for fear of data corruption or an incompatible file."));
+        }
+
+        let block_size = byte::u32_from_u8(&bytes[offset+gen::BlockSizeStart()..offset+gen::BlockSizeEnd()]);
+
+        offset += 0x20;
+
+        // collect the table and parse it.
+        let master_table = &bytes[offset..offset+(block_size as usize)/2];
+
+        // it's in chunks of 32 bit integers.
+        for i in 0_u32..(block_size / 8) as u32 {
+            let item = &master_table[(i*4) as usize..((i+1)*4) as usize];
+            // first 24 bits is the offset. last 8 is block's "ID number"
+            let location = byte::u24_from_u8(&item[0..3]) * 32;
+            let id = item[3];
+
+            // if the pointer is 0 then it's a "free block". we don't care about those, ignore them.
+            if(location == 0x00) {
+                continue;
+            }
+            println!("Block {}: {:#08x}",id,location);
+        }
+
         Ok(())
     }
 }

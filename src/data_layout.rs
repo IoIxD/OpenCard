@@ -1,5 +1,27 @@
 use enum_gen::layout;
 
+//
+// This file contains a bunch of "tables" that assign names to known data ranges.
+// It is generated via a procedural macro.
+// The enums actually get replaced with structs with nested functions due to the fact
+// that an enum can't have multiple values, but with the way Rust handles byte slices,
+// there needs to be multiple values since one entry's end is another entry's start.
+//
+// Each enum is to be filled with entries similar to the following:
+// #[ahead(NUMBER_OF_BYTES_FOR_THIS_VALUE)] ValueName
+// and two functions are generated as a result:
+// ValueNameStart() which returns the beginning of the range, and ValueNameEnd() which returns
+// the end of the range according to the number you provided.
+//
+
+#[layout(BlockLayoutGeneric)]
+enum BlockLayoutGeneric {
+    #[ahead(4)] BlockSize,
+    #[ahead(4)] BlockType,
+    #[ahead(4)] BlockID,
+    #[ahead(4)] Filler0,
+}
+
 #[layout(StackDataLayout)]
 enum StackDataLayout {
     #[ahead(4)] BlockSize,

@@ -28,6 +28,13 @@ pub fn u32_from_u8(b: &[u8]) -> u32 {
     ((b[3] as u32) <<  0)
 }
 
+pub fn u24_from_u8(b: &[u8]) -> u32 {
+    ((b[0] as u32) << 16) +
+    ((b[1] as u32) <<  8) +
+    ((b[2] as u32) <<  0)
+}
+
+
 pub fn u16_from_u8(b: &[u8]) -> u16 {
     ((b[0] as u16) <<  8) +
     ((b[1] as u16) <<  0)
