@@ -1,4 +1,5 @@
 use eyre::{eyre,ErrReport};
+use std::collections::HashMap;
 use std::str;
 
 use crate::byte;
@@ -11,6 +12,8 @@ use super::style::Style;
 
 use super::data_layout::BlockLayoutGeneric as gen;
 use super::data_layout::StackDataLayout as st;
+
+use super::general::Block;
 
 #[derive(Debug)]
 pub enum StackFormat {
@@ -169,12 +172,13 @@ impl Stack<'_> {
         offset += 0x20;
 
         // collect the table and parse it.
-        let master_table = &bytes[offset..offset+(block_size as usize)/2];
+        let master_table: HashMap<u8, Block> = HashMap::new();
+        let master_table_raw = &bytes[offset..offset+(block_size as usize)/2];
 
         // it's in chunks of 32 bit integers.
         for i in 0_u32..(block_size / 8) as u32 {
-            let item = &master_table[(i*4) as usize..((i+1)*4) as usize];
-            // first 24 bits is the offset. last 8 is block's "ID number"
+            let item = &master_table_raw[(i*4) as usize..((i+1)*4) as usize];
+            // first 24 bits is the offset (as a multiple of 32). last 8 is block's "ID number"
             let location = byte::u24_from_u8(&item[0..3]) * 32;
             let id = item[3];
             // if the pointer is 0 then it's a "free block". we don't care about those, ignore them.
@@ -183,7 +187,12 @@ impl Stack<'_> {
             }
 
             let block_type = str::from_utf8(&bytes[location as usize+gen::BlockTypeStart()..location as usize+gen::BlockTypeEnd()])?;
-            println!("Block {} '{}' at {:#08x}",id,block_type,location);
+
+            match block_type {
+                _ => {
+                    println!("Unimplemented: block {} '{}' at {:#08x}",id,block_type,location);
+                }
+            }
         }
 
         Ok(())
