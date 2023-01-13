@@ -111,6 +111,7 @@ impl Stack<'_> {
             10 => StackFormat::HyperCard2x,
             11..=u32::MAX => StackFormat::Unsupported,
         };
+
         println!("Loading a {:?} format file",format);
 
         // size/allocatin values
