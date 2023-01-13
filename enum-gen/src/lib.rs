@@ -10,7 +10,7 @@ use syn::{parse_macro_input, DeriveInput};
 #[proc_macro_attribute]
 pub fn layout(args: TokenStream, input: TokenStream) -> TokenStream {
     let DeriveInput { ident, data, .. } = parse_macro_input!(input);
-    let enumName = args.to_string();
+    let enum_name = args.to_string();
 
     let mut result: String = String::new();
 
@@ -19,7 +19,7 @@ pub fn layout(args: TokenStream, input: TokenStream) -> TokenStream {
         result.write_str(format!("
         #[derive(Debug)]
         pub struct {} {{}}
-        impl {} {{",enumName,enumName)
+        impl {} {{",enum_name,enum_name)
         .as_str());
         let mut offset = 0;
         for var in &s.variants {

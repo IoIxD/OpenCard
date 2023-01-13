@@ -4,9 +4,6 @@ use std::{fs::File, io::Read, error::Error};
 pub mod block;
 pub mod woba;
 pub mod byte;
-pub mod data_layout;
-
-use data_layout::StackDataLayout;
 
 use crate::block::stack::Stack;
 
@@ -23,7 +20,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             let len = a.metadata()?.len();
             let b: &mut Vec<u8> = &mut vec![0; len as usize];
             match File::read(&mut a, b) {
-                Ok(a) => {
+                Ok(_) => {
                     println!("{:#?}",Stack::from(&b));
                 },
                 Err(err) => {

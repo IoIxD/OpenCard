@@ -9,8 +9,8 @@ use super::card::Card;
 use super::font::Font;
 use super::style::Style;
 
-use crate::data_layout::BlockLayoutGeneric as gen;
-use crate::data_layout::StackDataLayout as st;
+use super::data_layout::BlockLayoutGeneric as gen;
+use super::data_layout::StackDataLayout as st;
 
 #[derive(Debug)]
 pub enum StackFormat {
@@ -177,12 +177,13 @@ impl Stack<'_> {
             // first 24 bits is the offset. last 8 is block's "ID number"
             let location = byte::u24_from_u8(&item[0..3]) * 32;
             let id = item[3];
-
             // if the pointer is 0 then it's a "free block". we don't care about those, ignore them.
-            if(location == 0x00) {
+            if location == 0x00 {
                 continue;
             }
-            println!("Block {}: {:#08x}",id,location);
+
+            let block_type = str::from_utf8(&bytes[location as usize+gen::BlockTypeStart()..location as usize+gen::BlockTypeEnd()])?;
+            println!("Block {} '{}' at {:#08x}",id,block_type,location);
         }
 
         Ok(())
