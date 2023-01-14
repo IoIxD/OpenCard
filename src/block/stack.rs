@@ -25,12 +25,7 @@ pub enum StackFormat {
 }
 
 pub struct Stack<'a> {
-    size: u32,
     format: StackFormat,
-    data_fork_size: u32,
-    stack_size: u32,
-    unk1: u32,
-    max_of_prev_value: u32,     // wat
 
     backgrounds: Vec<&'a Background<'a>>,
     first_background: &'a Background<'a>,
@@ -38,10 +33,8 @@ pub struct Stack<'a> {
     cards: Vec<&'a Block<'a>>,
     first_card: &'a Card<'a>,
 
-    version_at_creation: u32,
-    version_at_last_compacting: u32,
-    version_at_last_modification_since_compacting: u32,
-    version_at_last_modification: u32,
+    // in order of appearance in the file format
+    version: (u32, u32, u32, u32),
 
     checksum: u32,
 
@@ -51,18 +44,11 @@ pub struct Stack<'a> {
 
     coords: (u16, u16),
 
-    unk2: u16,
-
     fonts: &'a [&'a Font<'a>],
     styles: &'a [&'a Style<'a>],
 
-    height: u16,
-    width: u16,
+    size: (u16, u16), // width, height
 
-    unk3: u16,
-    unk4: u16,
-
-    patterns: &'a [u8],
     script: &'a str
 }
 
