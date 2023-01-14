@@ -38,12 +38,6 @@ pub struct Stack<'a> {
     cards: Vec<&'a Block<'a>>,
     first_card: &'a Card<'a>,
 
-    password_hash: u32,
-
-    user_level: u16,
-
-    prot_flags: u16,
-
     version_at_creation: u32,
     version_at_last_compacting: u32,
     version_at_last_modification_since_compacting: u32,
