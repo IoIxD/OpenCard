@@ -51,22 +51,17 @@ pub struct Stack<'a> {
 
     checksum: u32,
 
-    marked_card_num: u32,
-    top_of_card_window: u16,
-    left_of_card_window: u16,
-    bottom_of_card_window: u16,
-    right_of_card_window: u16,
-    top_of_screen: u16,
-    left_of_screen: u16,
-    bottom_of_screen: u16,
-    right_of_screen: u16,
+    // (top, left, bottom, right)
+    card_window_coords: (u16, u16, u16, u16),
+    screen_coords: (u16, u16, u16, u16),
+
     x_coord_scroll: u16,
     y_coord_scroll: u16,
 
     unk2: u16,
 
-    font_table: &'a [&'a Font<'a>],
-    style_table: &'a [&'a Style<'a>],
+    fonts: &'a [&'a Font<'a>],
+    styles: &'a [&'a Style<'a>],
 
     height: u16,
     width: u16,
