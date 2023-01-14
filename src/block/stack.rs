@@ -173,7 +173,7 @@ impl Stack<'_> {
         }
 
         // loop through all the pointers we got and construct blocks off of them.
-        for (location, id) in &master_table {
+        for (id, location) in &master_table {
             let location = *location;
             let id = *id;
 
