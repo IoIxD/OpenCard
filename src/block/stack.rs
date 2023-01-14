@@ -49,8 +49,7 @@ pub struct Stack<'a> {
     card_window_coords: (u16, u16, u16, u16),
     screen_coords: (u16, u16, u16, u16),
 
-    x_coord_scroll: u16,
-    y_coord_scroll: u16,
+    coords: (u16, u16),
 
     unk2: u16,
 
@@ -107,8 +106,6 @@ impl Stack<'_> {
         // appear in the file. this improves load times a bit on older hard drives.
 
         // misc. shit
-        let password_hash = byte::u32_from_u8(&bytes[st::PasswordHashStart()..st::PasswordHashEnd()]);
-        let protection_flags = byte::u16_from_u8(&bytes[st::ProtFlagsStart()..st::ProtFlagsEnd()]);
         let hypercard_version_at_creation = byte::u32_from_u8(&bytes[st::HyperCardVersionAtCreationStart()..st::HyperCardVersionAtCreationEnd()]);
         let hypercard_version_at_last_compacting = byte::u32_from_u8(&bytes[st::HyperCardVersionAtLastCompactingStart()..st::HyperCardVersionAtLastCompactingEnd()]);
         let hypercard_version_at_last_modification_since_last_compacting = byte::u32_from_u8(&bytes[st::HyperCardVersionAtLastModificationSinceLastCompactingStart()..st::HyperCardVersionAtLastModificationSinceLastCompactingEnd()]);
@@ -132,7 +129,6 @@ impl Stack<'_> {
         // tables
         let font_table: Vec<&Font> = Vec::new();
         let style_table: Vec<&Style> = Vec::new();
-        let page_table: Vec<&Page> = Vec::new();
 
         // skip to 0x600 and get the stack script, which is terminated by 0x00
         let mut offset = 0x601;
@@ -175,10 +171,6 @@ impl Stack<'_> {
 
             master_table.insert(id, location);
         }
-
-        let mut list_ids = Vec::new();
-        let mut list_page_num = 0;
-        let mut list_page_size = 0;
 
         // loop through all the pointers we got and construct blocks off of them.
         for (location, id) in &master_table {
