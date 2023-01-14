@@ -5,7 +5,6 @@ use std::str;
 use crate::byte;
 
 use super::background::Background;
-use super::list::List;
 use super::card::Card;
 use super::font::Font;
 use super::style::Style;
@@ -33,13 +32,11 @@ pub struct Stack<'a> {
     unk1: u32,
     max_of_prev_value: u32,     // wat
 
-    background_num: u32,
+    backgrounds: Vec<&'a Background<'a>>,
     first_background: &'a Background<'a>,
 
-    card_num: u32,
+    cards: Vec<&'a Block<'a>>,
     first_card: &'a Card<'a>,
-
-    list: &'a List<'a>,
 
     password_hash: u32,
 
@@ -146,6 +143,7 @@ impl Stack<'_> {
         // tables
         let font_table: Vec<&Font> = Vec::new();
         let style_table: Vec<&Style> = Vec::new();
+        let page_table: Vec<&Page> = Vec::new();
 
         // skip to 0x600 and get the stack script, which is terminated by 0x00
         let mut offset = 0x601;
@@ -172,10 +170,10 @@ impl Stack<'_> {
         offset += 0x20;
 
         // collect the table and parse it.
-        let master_table: HashMap<u8, Block> = HashMap::new();
+        let mut master_table: HashMap<u8, u32> = HashMap::new();
         let master_table_raw = &bytes[offset..offset+(block_size as usize)/2];
 
-        // it's in chunks of 32 bit integers.
+        // store the master IDs
         for i in 0_u32..(block_size / 8) as u32 {
             let item = &master_table_raw[(i*4) as usize..((i+1)*4) as usize];
             // first 24 bits is the offset (as a multiple of 32). last 8 is block's "ID number"
@@ -186,9 +184,27 @@ impl Stack<'_> {
                 continue;
             }
 
-            let block_type = str::from_utf8(&bytes[location as usize+gen::BlockTypeStart()..location as usize+gen::BlockTypeEnd()])?;
+            master_table.insert(id, location);
+        }
 
+        let mut list_ids = Vec::new();
+        let mut list_page_num = 0;
+        let mut list_page_size = 0;
+
+        // loop through all the pointers we got and construct blocks off of them.
+        for (location, id) in &master_table {
+            let location = *location;
+            let id = *id;
+
+            let block_type = str::from_utf8(&bytes[location as usize+gen::BlockTypeStart()..location as usize+gen::BlockTypeEnd()])?;
+            let block_size = byte::u32_from_u8(&bytes[location as usize+gen::BlockSizeStart()..location as usize+gen::BlockSizeEnd()]);
+            let chunk = &bytes[location as usize..location as usize+block_size as usize];
             match block_type {
+                "LIST" | "PAGE" => {
+                    // redundant data that speeds up insertion/deletions in the original tools
+                    // but we read these cards as read only and thus this is about as useful  as
+                    // the master block
+                },
                 _ => {
                     println!("Unimplemented: block {} '{}' at {:#08x}",id,block_type,location);
                 }
