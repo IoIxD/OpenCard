@@ -75,3 +75,27 @@ enum StackDataLayout {
     #[ahead(256)] SkipAhead256,
     #[ahead(320)] PatternTable,
 }
+
+#[layout(BitmapLayout)]
+enum BitmapLayout {
+    #[ahead(4)] BlockSize,
+    #[ahead(4)] BlockType,
+    #[ahead(4)] BlockID,
+    #[ahead(4)] Filler0,
+    #[ahead(8)] UnknownGroup,
+    #[ahead(2)] CardTop,
+    #[ahead(2)] CardLeft,
+    #[ahead(2)] CardBottom,
+    #[ahead(2)] CardRight,
+    #[ahead(2)] MaskTop,
+    #[ahead(2)] MaskLeft,
+    #[ahead(2)] MaskBottom,
+    #[ahead(2)] MaskRight,
+    #[ahead(2)] ImageTop,
+    #[ahead(2)] ImageLeft,
+    #[ahead(2)] ImageBottom,
+    #[ahead(2)] ImageRight,
+    #[ahead(8)] UnknownGroup2,
+    #[ahead(4)] MaskDataSize,
+    #[ahead(4)] ImageDataSize
+}

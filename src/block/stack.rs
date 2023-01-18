@@ -2,6 +2,7 @@ use eyre::{eyre,ErrReport};
 use std::collections::HashMap;
 use std::str;
 
+use crate::block::bitmap::Bitmap;
 use crate::byte;
 
 use super::background::Background;
@@ -30,7 +31,7 @@ pub struct Stack<'a> {
     backgrounds: Vec<&'a Background<'a>>,
     first_background: &'a Background<'a>,
 
-    cards: Vec<&'a Block<'a>>,
+    object: Vec<&'a Block<'a>>,
     first_card: &'a Card<'a>,
 
     // in order of appearance in the file format
@@ -52,7 +53,7 @@ pub struct Stack<'a> {
     script: &'a str
 }
 
-impl Stack<'_> {
+impl<'a> Stack<'a> {
     pub fn from(bytes: &[u8]) -> Result<(), ErrReport> {
         // todo: ...huh.
         // let bytes = byte::convert_u8_array_big_to_little(bytes);
@@ -91,11 +92,18 @@ impl Stack<'_> {
         // get any values that don't need to be malformed or "changed" later here, in the order they
         // appear in the file. this improves load times a bit on older hard drives.
 
-        // misc. shit
-        let hypercard_version_at_creation = byte::u32_from_u8(&bytes[st::HyperCardVersionAtCreationStart()..st::HyperCardVersionAtCreationEnd()]);
-        let hypercard_version_at_last_compacting = byte::u32_from_u8(&bytes[st::HyperCardVersionAtLastCompactingStart()..st::HyperCardVersionAtLastCompactingEnd()]);
-        let hypercard_version_at_last_modification_since_last_compacting = byte::u32_from_u8(&bytes[st::HyperCardVersionAtLastModificationSinceLastCompactingStart()..st::HyperCardVersionAtLastModificationSinceLastCompactingEnd()]);
-        let hypercard_version_at_last_modification = byte::u32_from_u8(&bytes[st::HyperCardVersionAtLastModificationStart()..st::HyperCardVersionAtLastModificationEnd()]);
+        // version
+        let (
+            version_at_creation,
+            version_at_last_compacting,
+            version_at_last_modification_since_last_compacting,
+            version_at_last_modification
+        ) = (
+            byte::u32_from_u8(&bytes[st::HyperCardVersionAtCreationStart()..st::HyperCardVersionAtCreationEnd()]),
+            byte::u32_from_u8(&bytes[st::HyperCardVersionAtLastCompactingStart()..st::HyperCardVersionAtLastCompactingEnd()]),
+            byte::u32_from_u8(&bytes[st::HyperCardVersionAtLastModificationSinceLastCompactingStart()..st::HyperCardVersionAtLastModificationSinceLastCompactingEnd()]),
+            byte::u32_from_u8(&bytes[st::HyperCardVersionAtLastModificationStart()..st::HyperCardVersionAtLastModificationEnd()])
+        );
 
         // positioning
         let win_top = byte::u16_from_u8(&bytes[st::CardWindowTopStart()..st::CardWindowTopEnd()]);
@@ -103,9 +111,11 @@ impl Stack<'_> {
         let win_bottom = byte::u16_from_u8(&bytes[st::CardWindowBottomStart()..st::CardWindowBottomEnd()]);
         let win_right = byte::u16_from_u8(&bytes[st::CardWindowRightStart()..st::CardWindowRightEnd()]);
         let scr_top = byte::u16_from_u8(&bytes[st::ScreenTopStart()..st::ScreenTopEnd()]);
+
         let scr_left = byte::u16_from_u8(&bytes[st::ScreenLeftStart()..st::ScreenLeftEnd()]);
         let scr_bottom = byte::u16_from_u8(&bytes[st::ScreenBottomStart()..st::ScreenBottomEnd()]);
         let scr_right = byte::u16_from_u8(&bytes[st::ScreenRightStart()..st::ScreenRightEnd()]);
+
         let x_coord = byte::u16_from_u8(&bytes[st::XCoordStart()..st::XCoordEnd()]);
         let y_coord = byte::u16_from_u8(&bytes[st::YCoordStart()..st::YCoordEnd()]);
 
@@ -158,6 +168,8 @@ impl Stack<'_> {
             master_table.insert(id, location);
         }
 
+        let mut objects: Vec<Block<'a>> = Vec::new();
+
         // loop through all the pointers we got and construct blocks off of them.
         for (id, location) in &master_table {
             let location = *location;
@@ -172,6 +184,9 @@ impl Stack<'_> {
                     // but we read these cards as read only and thus this is about as useful  as
                     // the master block
                 },
+                "BMAP" => {
+                    objects.push(Block::Bitmap(Bitmap::from(chunk)));
+                }
                 _ => {
                     println!("Unimplemented: block {} '{}' at {:#08x}",id,block_type,location);
                 }

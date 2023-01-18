@@ -3,7 +3,7 @@ use super::card::Card;
 use super::part::Part;
 
 pub struct Background<'a> {
-    bitmap: &'a Bitmap<'a>,
+    bitmap: &'a Bitmap,
     flags: u16,
 
     cards: &'a [&'a Card<'a>],

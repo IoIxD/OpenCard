@@ -2,7 +2,7 @@ use super::{bitmap::Bitmap, font::Font, background::Background, style::Style, ca
 
 pub enum Block<'a> {
     Background(Background<'a>),
-    Bitmap(Bitmap<'a>),
+    Bitmap(Bitmap),
     Card(Card<'a>),
     Font(Font<'a>),
     Part(Part<'a>),

@@ -2,7 +2,6 @@ use clap::Parser;
 use std::{fs::File, io::Read, error::Error};
 
 pub mod block;
-pub mod woba;
 pub mod byte;
 
 use crate::block::stack::Stack;

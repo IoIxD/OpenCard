@@ -43,7 +43,7 @@ pub fn layout(args: TokenStream, input: TokenStream) -> TokenStream {
         result.write_str("}");
     }
 
-    println!("{}",result);
+    //println!("{}",result);
 
     result.as_str().parse().unwrap()
 }
