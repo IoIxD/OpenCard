@@ -185,7 +185,10 @@ impl<'a> Stack<'a> {
                     // the master block
                 },
                 "BMAP" => {
-                    objects.push(Block::Bitmap(Bitmap::from(chunk)));
+                    let b = Bitmap::from(chunk).unwrap();
+                    &b.image.save(format!("{}_{}.png",block_type,location));
+                    objects.push(Block::Bitmap(b));
+
                 }
                 _ => {
                     println!("Unimplemented: block {} '{}' at {:#08x}",id,block_type,location);

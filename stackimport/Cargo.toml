@@ -10,4 +10,5 @@ links = "stackimport"
 cc = { version = "1.0.78", features = ["parallel"] }
 
 [dependencies]
+ascii_converter = "0.3.0"
 eyre = "0.6.8"

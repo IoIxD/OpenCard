@@ -3,6 +3,12 @@
 version = 3
 
 [[package]]
+name = "ascii_converter"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a73cd7fe90cd95612f7486889bbe1110689e03f745d9ceac276d4cfe6c4574e9"
+
+[[package]]
 name = "cc"
 version = "1.0.78"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -52,6 +58,7 @@ checksum = "6f61fba1741ea2b3d6a1e3178721804bb716a68a6aeba1149b5d52e3d464ea66"
 name = "stackimport"
 version = "0.1.0"
 dependencies = [
+ "ascii_converter",
  "cc",
  "eyre",
 ]

@@ -11,4 +11,5 @@ eyre = "0.6.8"
 image = "0.24.5"
 enum-gen = {path = "./enum-gen"}
 stackimport = {path = "./stackimport"}
+ascii_converter = "0.3.0"
 
