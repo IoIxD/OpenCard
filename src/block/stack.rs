@@ -1,4 +1,7 @@
 use eyre::{eyre,ErrReport};
+use futures::FutureExt;
+use futures::future::{join_all, OptionFuture};
+
 use std::collections::HashMap;
 use std::str;
 
@@ -53,8 +56,8 @@ pub struct Stack<'a> {
     script: &'a str
 }
 
-impl<'a> Stack<'a> {
-    pub fn from(bytes: &[u8]) -> Result<(), ErrReport> {
+impl Stack<'_> {
+    pub async fn from(bytes: &[u8]) -> Result<(), ErrReport> {
         // todo: ...huh.
         // let bytes = byte::convert_u8_array_big_to_little(bytes);
 
@@ -167,36 +170,41 @@ impl<'a> Stack<'a> {
 
             master_table.insert(id, location);
         }
-
-        let mut objects: Vec<Block<'a>> = Vec::new();
-
+        let mut futures = vec![];
         // loop through all the pointers we got and construct blocks off of them.
+        // we construct futures that do this so that we can use multithreading
         for (id, location) in &master_table {
-            let location = *location;
-            let id = *id;
-
-            let block_type = str::from_utf8(&bytes[location as usize+gen::BlockTypeStart()..location as usize+gen::BlockTypeEnd()])?;
-            let block_size = byte::u32_from_u8(&bytes[location as usize+gen::BlockSizeStart()..location as usize+gen::BlockSizeEnd()]);
-            let chunk = &bytes[location as usize..location as usize+block_size as usize];
-            match block_type {
-                "LIST" | "PAGE" => {
-                    // redundant data that speeds up insertion/deletions in the original tools
-                    // but we read these cards as read only and thus this is about as useful  as
-                    // the master block
-                },
-                "BMAP" => {
-                    println!("decoding bitmap");
-                    let b = Bitmap::from(chunk).unwrap();
-                    &b.image.save(format!("{}_{}.png",block_type,location));
-                    objects.push(Block::Bitmap(b));
-
-                }
-                _ => {
-                    println!("Unimplemented: block {} '{}' at {:#08x}",id,block_type,location);
-                }
-            }
+            let block_type = str::from_utf8(&bytes[*location as usize+gen::BlockTypeStart()..*location as usize+gen::BlockTypeEnd()])?;
+            let block_size = byte::u32_from_u8(&bytes[*location as usize+gen::BlockSizeStart()..*location as usize+gen::BlockSizeEnd()]);
+            let chunk = &bytes[*location as usize..*location as usize+block_size as usize];
+            futures.push(stack_parse(*location, *id, block_type.to_string(), chunk));
         }
+        let objects: Vec<Block<'_>> = join_all(futures.into_iter()).await.into_iter().filter(|f| {
+            f.is_some()
+        }).map(|f| f.unwrap()).collect();
+
+
 
         Ok(())
+    }
+}
+
+async fn stack_parse(location: u32, id: u8, block_type: String, chunk: &[u8]) -> Option<Block<'_>> {
+    match block_type.as_str() {
+        "LIST" | "PAGE" => {
+            // redundant data that speeds up insertion/deletions in the original tools
+            // but we read these cards as read only and thus this is about as useful  as
+            // the master block
+            None
+        },
+        "BMAP" => {
+            println!("decoding bitmap");
+            let b = Bitmap::from(chunk).unwrap();
+            Some(Block::Bitmap(b))
+        }
+        _ => {
+            println!("Unimplemented: block {} '{}' at {:#08x}",id,block_type,location);
+            None
+        }
     }
 }
