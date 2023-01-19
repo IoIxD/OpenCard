@@ -185,6 +185,7 @@ impl<'a> Stack<'a> {
                     // the master block
                 },
                 "BMAP" => {
+                    println!("decoding bitmap");
                     let b = Bitmap::from(chunk).unwrap();
                     &b.image.save(format!("{}_{}.png",block_type,location));
                     objects.push(Block::Bitmap(b));

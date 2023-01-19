@@ -16,8 +16,6 @@ pub struct picture<'a> {
     bitmap: &'a ffi::CStr,
     masklength: ffi::c_int,
     mask: &'a ffi::CStr,
-
-    bitmap_pbm: &'a [u8]
 }
 
 impl<'a> picture<'a> {
