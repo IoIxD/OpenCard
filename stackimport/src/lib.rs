@@ -32,7 +32,7 @@ impl<'a> picture<'a> {
         *&self.greyscalemask == 1
     }
     pub fn bitmap_raw(&self) -> &[u8] {
-        &self.bitmap.to_bytes()
+        &self.bitmap.to_bytes()[..self.bitmaplength as usize - 1]
     }
     pub fn blank_pbm(&self) -> Vec<u8> {
         format!("P4 {} {} ",&self.width(),&self.height()).as_bytes().to_vec()
@@ -42,14 +42,14 @@ impl<'a> picture<'a> {
         [j.as_bytes(), (&self).bitmap_raw()].concat()
     }
     pub fn mask_raw(&self) -> Option<&[u8]> {
-        if self.masklength <= 0 || self.masklength >= i16::MAX as i32 {
+        if self.masklength <= 0 || self.masklength as u32 >= u32::MAX as u32 {
             None
         } else {
             Some(&self.mask.to_bytes())
         }
     }
     pub fn mask_pbm(&self) -> Option<Vec<u8>> {
-        if self.masklength <= 0 || self.masklength >= i16::MAX as i32 {
+        if self.masklength <= 0 || self.masklength as u32 >= u32::MAX as u32 {
             None
         } else {
             let j = format!("P4 {} {} ",&self.width(),&self.height());

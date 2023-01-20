@@ -6,11 +6,9 @@ pub struct Background<'a> {
     bitmap: &'a Bitmap,
     flags: u16,
 
-    cards: &'a [&'a Card<'a>],
+    card_ids: Vec<u16>,
     next: Option<&'a Background<'a>>,
     prev: Option<&'a Background<'a>>,
-
-    parts: &'a [&'a Part<'a>],
 
     name: &'a str,
     script: &'a str,

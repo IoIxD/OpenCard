@@ -140,3 +140,17 @@ enum PartLayout {
     #[ahead(1)] Filler0,
     #[ahead(2)] LineHeight,
 }
+
+#[layout(PartContentEntryLayout)]
+enum PartContentEntryLayout {
+    #[ahead(2)] PartID,
+    #[ahead(2)] EntryLength,
+    #[ahead(1)] PlainTextMarkerOrStyleLengthByte1,
+    #[ahead(1)] StyleLengthByte2,
+}
+
+#[layout(StyleDataLayout)]
+enum StyleDataLayout {
+    #[ahead(2)] TextPosition,
+    #[ahead(2)] StyleID,
+}

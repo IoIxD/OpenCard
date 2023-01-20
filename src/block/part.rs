@@ -1,5 +1,6 @@
 use std::error::Error;
 
+use crate::byte;
 use crate::macroman::macroman_to_char;
 
 use crate::byte::byte_range;
@@ -9,8 +10,10 @@ use eyre::{eyre,ErrReport};
 use super::font::Font;
 use super::style::Style;
 use super::data_layout::PartLayout as p;
+use super::data_layout::PartContentEntryLayout as pc;
+use super::data_layout::StyleDataLayout as st;
 
-pub struct Part<'a> {
+pub struct Part {
     ty: PartType,
 
     position: (u16, u16, u16, u16),
@@ -27,13 +30,14 @@ pub struct Part<'a> {
     name: String,
     script: String,
 
-    contents: Option<&'a [&'a ContentEntry<'a>]>,
+    contents: Vec<ContentEntry>,
 }
 
-pub struct ContentEntry<'a> {
+#[derive(Debug)]
+pub struct ContentEntry {
     id: u16,
-    styles: &'a[&'a Style<'a>],
-    text: &'a str,
+    styles: Option<Vec<ContentEntryStyle>>,
+    text: String,
 }
 
 pub enum PartType {
@@ -67,9 +71,14 @@ pub enum TextAlignment {
     ForceRightAlign,
     Unknown
 }
+#[derive(Debug)]
+pub struct ContentEntryStyle {
+    text_position: u16,
+    id: u16,
+}
 
-impl Part<'_> {
-    pub fn from(b: &[u8]) -> Result<Self, ErrReport> {
+impl Part {
+    pub fn from(b: &[u8], part_content_num: u16, part_content_list_size: u32) -> Result<Self, ErrReport> {
         let ty = match byte_range!(u16, b, p::PartID) {
             0 => PartType::Button,
             1 => PartType::Field,
@@ -146,6 +155,53 @@ impl Part<'_> {
         }
         let code: String = (&stack).iter().collect();
 
+        let mut content_entries: Vec<ContentEntry> = Vec::new();
+
+        // part content entry
+        for i in 0..part_content_num {
+            let block = &b[offset..offset+part_content_list_size as usize];
+            let id = byte_range!(u16, b, pc::PartID);
+            let entry_len = byte_range!(u16, b, pc::EntryLength);
+
+            let tmp = &b[pc::PlainTextMarkerOrStyleLengthByte1Start()];
+            // if that first byte is 0 then there's no styles.
+            let mut styles: Option<Vec<ContentEntryStyle>> = None;
+            let mut noffset = offset;
+            if *tmp != 0 {
+                noffset += pc::StyleLengthByte2End();
+                let mut tstyles: Vec<ContentEntryStyle> = Vec::new();
+                // get the 'style length'; but negate the first bit because it's always set.
+                let mut style_length = byte::u16_from_u8(&b[pc::PlainTextMarkerOrStyleLengthByte1Start()..pc::StyleLengthByte2End()]);
+                style_length &= i16::MAX as u16;
+                style_length /= 4;
+                for n in 0..style_length {
+                    let styleblock = &b[noffset..noffset+(style_length*0x04) as usize];
+                    let text_position = byte_range!(u16, styleblock, st::TextPosition);
+                    let id2 = byte_range!(u16, styleblock, st::StyleID);
+                    tstyles.push(ContentEntryStyle { text_position, id: id2 });
+                    noffset += (style_length*0x04) as usize;
+                }
+                styles = Some(tstyles);
+            }
+            // name, both terminated by nil
+            let mut stack: Vec<char> = Vec::new();
+            loop {
+                let ch = (&b)[noffset];
+                if ch == 0 {
+                    break;
+                }
+                stack.push(macroman_to_char(ch)); // blindly unwrap because we can be certain it's a valid mac roman character
+                noffset += 1;
+            }
+            let text: String = (&stack).iter().collect();
+            content_entries.push(ContentEntry {
+                id,
+                styles,
+                text,
+            });
+            offset += part_content_list_size as usize;
+        }
+
         println!("\n===========");
 
         Ok(Part{
@@ -160,7 +216,7 @@ impl Part<'_> {
             line_height,
             name,
             script: code,
-            contents: None,
+            contents: content_entries,
         })
     }
 }

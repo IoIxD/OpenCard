@@ -36,7 +36,7 @@ pub struct Stack<'a> {
     first_background: &'a Background<'a>,
 
     object: Vec<&'a Block<'a>>,
-    first_card: &'a Card<'a>,
+    first_card: &'a Card,
 
     // in order of appearance in the file format
     version: (u32, u32, u32, u32),

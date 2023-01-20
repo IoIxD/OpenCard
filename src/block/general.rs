@@ -3,8 +3,8 @@ use super::{bitmap::Bitmap, font::Font, background::Background, style::Style, ca
 pub enum Block<'a> {
     Background(Background<'a>),
     Bitmap(Bitmap),
-    Card(Card<'a>),
+    Card(Card),
     Font(Font<'a>),
-    Part(Part<'a>),
+    Part(Part),
     Style(Style<'a>)
 }

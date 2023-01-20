@@ -5,17 +5,17 @@ use super::data_layout::CardLayout as c;
 use crate::byte::{self, byte_range};
 use crate::macroman::macroman_to_char;
 
-pub struct Card<'a> {
+pub struct Card {
     id: u32,
     bitmap_block_id: u32,
     flags: u16,
-    parts: Vec<Part<'a>>,
+    parts: Vec<Part>,
 
     name: String,
     script: String,
 }
 
-impl Card<'_> {
+impl Card {
     pub fn from(b: &[u8]) -> Result<Self, Box<dyn Error>> {
         /*for i in 0..b.len() {
             println!("{:#09x}\t\t{}",i,b[i]);
@@ -32,7 +32,7 @@ impl Card<'_> {
 
         let mut offset = c::PartContentListSizeEnd();
         let mut old_offset = offset;
-        let mut parts: Vec<Part<'_>> = Vec::new();
+        let mut parts: Vec<Part> = Vec::new();
         let mut part_size = 0;
         for i in 0..part_num {
             //println!("{:#09x}",offset);
@@ -45,14 +45,14 @@ impl Card<'_> {
             let part = match Part::from(&b[
                 (offset+(i*part_size) as usize)..
                 (offset+((i+1)*part_size) as usize)
-            ]) {
+            ], part_content_num, part_content_list_size) {
                 // we have to manually check this error because there is an error this throws that we want to handle.
                 Ok(a) => a,
                 Err(err) => {
                     if err.to_string() == "out of bounds" {
                         // for some unknown reason, sometimes the part size is not correct.
                         // this should be investigated. but for now, if it's ever problem, just load the rest of the block in.
-                        Part::from(&b[(offset+(i*part_size) as usize)..])?
+                        Part::from(&b[(offset+(i*part_size) as usize)..], part_content_num, part_content_list_size)?
                     } else {
                         return Err(err.into());
                     }
