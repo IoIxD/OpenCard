@@ -31,8 +31,13 @@ impl<'a> picture<'a> {
     pub fn greyscalemask(&self) -> bool {
         *&self.greyscalemask == 1
     }
+    #[cfg(debug_assertions)] // debug
     pub fn bitmap_raw(&self) -> &[u8] {
         &self.bitmap.to_bytes()[..self.bitmaplength as usize - 1]
+    }
+    #[cfg(not(debug_assertions))] // release
+    pub fn bitmap_raw(&self) -> &[u8] {
+        &self.bitmap.to_bytes()[..self.bitmaplength as usize]
     }
     pub fn blank_pbm(&self) -> Vec<u8> {
         format!("P4 {} {} ",&self.width(),&self.height()).as_bytes().to_vec()
@@ -41,11 +46,20 @@ impl<'a> picture<'a> {
         let j = format!("P4 {} {} ",&self.width(),&self.height());
         [j.as_bytes(), (&self).bitmap_raw()].concat()
     }
+    #[cfg(debug_assertions)] // debug
     pub fn mask_raw(&self) -> Option<&[u8]> {
         if self.masklength <= 0 || self.masklength as u32 >= u32::MAX as u32 {
             None
         } else {
-            Some(&self.mask.to_bytes())
+            Some(&self.mask.to_bytes()[..self.masklength as usize - 1])
+        }
+    }
+    #[cfg(not(debug_assertions))] // release
+    pub fn mask_raw(&self) -> Option<&[u8]> {
+        if self.masklength <= 0 || self.masklength as u32 >= u32::MAX as u32 {
+            None
+        } else {
+            Some(&self.mask.to_bytes()[..self.masklength as usize - 1])
         }
     }
     pub fn mask_pbm(&self) -> Option<Vec<u8>> {
