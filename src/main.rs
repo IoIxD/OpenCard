@@ -4,6 +4,7 @@ use std::{fs::File, io::Read, error::Error};
 
 pub mod block;
 pub mod byte;
+pub mod macroman;
 
 use crate::block::stack::Stack;
 

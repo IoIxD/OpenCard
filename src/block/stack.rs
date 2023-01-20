@@ -7,6 +7,7 @@ use std::str;
 
 use crate::block::bitmap::Bitmap;
 use crate::byte;
+use crate::byte::byte_range;
 
 use super::background::Background;
 use super::card::Card;
@@ -73,9 +74,9 @@ impl Stack<'_> {
             return Err(eyre!("Provided file is not a valid HyperCard file; Stack block not found."));
         }
 
-        let stack_size = byte::u32_from_u8(&bytes[st::BlockSizeStart()..st::BlockSizeEnd()]);
+        let stack_size = byte_range!(u32,bytes,st::BlockSize);
 
-        let format_raw = byte::u32_from_u8(&bytes[st::HyperCardFormatStart()..st::HyperCardFormatEnd()]);
+        let format_raw = byte_range!(u32,bytes,st::HyperCardFormat);
 
         let format = match format_raw {
             0 => StackFormat::NotHyperCard,
@@ -102,28 +103,27 @@ impl Stack<'_> {
             version_at_last_modification_since_last_compacting,
             version_at_last_modification
         ) = (
-            byte::u32_from_u8(&bytes[st::HyperCardVersionAtCreationStart()..st::HyperCardVersionAtCreationEnd()]),
-            byte::u32_from_u8(&bytes[st::HyperCardVersionAtLastCompactingStart()..st::HyperCardVersionAtLastCompactingEnd()]),
-            byte::u32_from_u8(&bytes[st::HyperCardVersionAtLastModificationSinceLastCompactingStart()..st::HyperCardVersionAtLastModificationSinceLastCompactingEnd()]),
-            byte::u32_from_u8(&bytes[st::HyperCardVersionAtLastModificationStart()..st::HyperCardVersionAtLastModificationEnd()])
+            byte_range!(u32,bytes,st::HyperCardVersionAtCreation),
+            byte_range!(u32,bytes,st::HyperCardVersionAtLastCompacting),
+            byte_range!(u32,bytes,st::HyperCardVersionAtLastModificationSinceLastCompacting),
+            byte_range!(u32,bytes,st::HyperCardVersionAtLastModification),
         );
 
         // positioning
-        let win_top = byte::u16_from_u8(&bytes[st::CardWindowTopStart()..st::CardWindowTopEnd()]);
-        let win_left = byte::u16_from_u8(&bytes[st::CardWindowLeftStart()..st::CardWindowLeftEnd()]);
-        let win_bottom = byte::u16_from_u8(&bytes[st::CardWindowBottomStart()..st::CardWindowBottomEnd()]);
-        let win_right = byte::u16_from_u8(&bytes[st::CardWindowRightStart()..st::CardWindowRightEnd()]);
-        let scr_top = byte::u16_from_u8(&bytes[st::ScreenTopStart()..st::ScreenTopEnd()]);
+        let win_top = byte_range!(u16,bytes,st::CardWindowTop);
+        let win_left = byte_range!(u16,bytes,st::CardWindowLeft);
+        let win_bottom = byte_range!(u16,bytes,st::CardWindowBottom);
+        let win_right = byte_range!(u16,bytes,st::CardWindowRight);
+        let scr_top = byte_range!(u16,bytes,st::ScreenTop);
+        let scr_left = byte_range!(u16,bytes,st::ScreenLeft);
+        let scr_bottom = byte_range!(u16,bytes,st::ScreenBottom);
+        let scr_right = byte_range!(u16,bytes,st::ScreenRight);
 
-        let scr_left = byte::u16_from_u8(&bytes[st::ScreenLeftStart()..st::ScreenLeftEnd()]);
-        let scr_bottom = byte::u16_from_u8(&bytes[st::ScreenBottomStart()..st::ScreenBottomEnd()]);
-        let scr_right = byte::u16_from_u8(&bytes[st::ScreenRightStart()..st::ScreenRightEnd()]);
+        let x_coord = byte_range!(u16,bytes,st::XCoord);
+        let y_coord = byte_range!(u16,bytes,st::YCoord);
 
-        let x_coord = byte::u16_from_u8(&bytes[st::XCoordStart()..st::XCoordEnd()]);
-        let y_coord = byte::u16_from_u8(&bytes[st::YCoordStart()..st::YCoordEnd()]);
-
-        let width = byte::u16_from_u8(&bytes[st::WidthStart()..st::WidthEnd()]);
-        let height = byte::u16_from_u8(&bytes[st::HeightStart()..st::HeightEnd()]);
+        let width = byte_range!(u16,bytes,st::Width);
+        let height = byte_range!(u16,bytes,st::Height);
 
         // tables
         let font_table: Vec<&Font> = Vec::new();
@@ -144,12 +144,13 @@ impl Stack<'_> {
 
         // skip to 0x800. we should see the master block.
         offset = 0x800;
+
         let block_type = str::from_utf8(&bytes[offset+gen::BlockTypeStart()..offset+gen::BlockTypeEnd()])?;
         if block_type != "MAST" {
             return Err(eyre!("Stack block was not followed up by a master block. Not continuing for fear of data corruption or an incompatible file."));
         }
 
-        let block_size = byte::u32_from_u8(&bytes[offset+gen::BlockSizeStart()..offset+gen::BlockSizeEnd()]);
+        let block_size = byte_range!(u32,bytes,offset,gen::BlockSize);
 
         offset += 0x20;
 
@@ -174,8 +175,18 @@ impl Stack<'_> {
         // loop through all the pointers we got and construct blocks off of them.
         // we construct futures that do this so that we can use multithreading
         for (id, location) in &master_table {
-            let block_type = str::from_utf8(&bytes[*location as usize+gen::BlockTypeStart()..*location as usize+gen::BlockTypeEnd()])?;
-            let block_size = byte::u32_from_u8(&bytes[*location as usize+gen::BlockSizeStart()..*location as usize+gen::BlockSizeEnd()]);
+            let j = byte_range!(all,bytes,*location as usize,gen::BlockType);
+
+            let block_type = match str::from_utf8(j) {
+                Ok(a) => a,
+                Err(err) => {
+                    unsafe {
+                        println!("Invalid block type '{}'",str::from_utf8_unchecked(j));
+                        continue;
+                    }
+                }
+            };
+            let block_size = byte_range!(u32,bytes,*location as usize,gen::BlockSize);
             let chunk = &bytes[*location as usize..*location as usize+block_size as usize];
             futures.push(stack_parse(*location, *id, block_type.to_string(), chunk));
         }
@@ -201,7 +212,11 @@ async fn stack_parse(location: u32, id: u8, block_type: String, chunk: &[u8]) ->
             println!("decoding bitmap");
             let b = Bitmap::from(chunk).unwrap();
             Some(Block::Bitmap(b))
-        }
+        },
+        "CARD" => {
+            let c = Card::from(chunk).unwrap();
+            Some(Block::Card(c))
+        },
         _ => {
             println!("Unimplemented: block {} '{}' at {:#08x}",id,block_type,location);
             None

@@ -1,30 +1,33 @@
+use std::error::Error;
+
+use crate::macroman::macroman_to_char;
+
+use crate::byte::byte_range;
+
+use eyre::{eyre,ErrReport};
+
 use super::font::Font;
 use super::style::Style;
+use super::data_layout::PartLayout as p;
 
 pub struct Part<'a> {
-    id: u16,
     ty: PartType,
-    hash_flags: u8,
-    top: u16,
-    left: u16,
-    bottom: u16,
-    right: u16,
-    unk_flags: u8,
+
+    position: (u16, u16, u16, u16),
     style: PartStyle,
 
     title_width: u16,
-    icon_id: u16,
     text_alignment: TextAlignment,
 
-    font: &'a Font<'a>,
+    font_id: u16,
     font_size: u16,
     text_flags: u8,
 
-    line_height: u8,
-    name: &'a str,
-    script: &'a str,
+    line_height: u16,
+    name: String,
+    script: String,
 
-    contents: &'a [&'a ContentEntry<'a>],
+    contents: Option<&'a [&'a ContentEntry<'a>]>,
 }
 
 pub struct ContentEntry<'a> {
@@ -35,7 +38,8 @@ pub struct ContentEntry<'a> {
 
 pub enum PartType {
     Button,
-    Field
+    Field,
+    Unknown
 }
 
 pub enum PartStyle {
@@ -50,7 +54,8 @@ pub enum PartStyle {
     Standard,
     Default,
     Oval,
-    Popup
+    Popup,
+    Unknown
 }
 
 pub enum TextAlignment {
@@ -60,4 +65,102 @@ pub enum TextAlignment {
     ForceLeftAlign,
     ForceCenterAlign,
     ForceRightAlign,
+    Unknown
+}
+
+impl Part<'_> {
+    pub fn from(b: &[u8]) -> Result<Self, ErrReport> {
+        let ty = match byte_range!(u16, b, p::PartID) {
+            0 => PartType::Button,
+            1 => PartType::Field,
+            _ => PartType::Unknown,
+        };
+        let position = (
+            byte_range!(u16, b, p::PartRectTop),
+            byte_range!(u16, b, p::PartRectLeft),
+            byte_range!(u16, b, p::PartRectBottom),
+            byte_range!(u16, b, p::PartRectRight)
+        );
+
+        let style = match &b[p::StyleStart()] {
+            0 => PartStyle::Transparent,
+            1 => PartStyle::Opaque,
+            2 => PartStyle::Rectangle,
+            3 => PartStyle::RoundRectangle,
+            4 => PartStyle::Shadow,
+            5 => PartStyle::Checkbox,
+            6 => PartStyle::Radio,
+            7 => PartStyle::Scrolling,
+            8 => PartStyle::Standard,
+            9 => PartStyle::Default,
+            10 => PartStyle::Oval,
+            11 => PartStyle::Popup,
+            _ => PartStyle::Unknown,
+        };
+
+        let title_width = byte_range!(u16, b, p::TitleWidthOrLastSelectedLine);
+
+        let text_alignment = match byte_range!(u16, b, p::TextAlignment) as i16 {
+            0 => TextAlignment::Left,
+            1 => TextAlignment::Center,
+            -1 => TextAlignment::Right,
+            -2 => TextAlignment::ForceLeftAlign,
+            -3 => TextAlignment::ForceCenterAlign,
+            -4 => TextAlignment::ForceRightAlign,
+            _ => TextAlignment::Unknown,
+        };
+
+        let font_id = byte_range!(u16, b, p::TextFontID);
+        let font_size = byte_range!(u16, b, p::TextSize);
+        let text_flags = *&b[p::TextFlagsStart()];
+
+        let line_height = byte_range!(u16, b, p::LineHeight);
+
+        let mut offset = p::LineHeightEnd();
+        // name and stack script, both terminated by nil
+        let mut stack: Vec<char> = Vec::new();
+        loop {
+            if offset >= b.len() {
+                return Err(eyre!("out of bounds"));
+            }
+            let ch = (&b)[offset];
+            if ch == 0 {
+                break;
+            }
+            stack.push(macroman_to_char(ch));
+            offset += 1;
+        }
+        println!("\n");
+        let name: String = (&stack).iter().collect();
+        let mut stack: Vec<char> = Vec::new();
+        loop {
+            if offset >= b.len() {
+                return Err(eyre!("out of bounds"));
+            }
+            let ch = (&b)[offset];
+            if ch == 0 {
+                break;
+            }
+            stack.push(macroman_to_char(ch));
+            offset += 1;
+        }
+        let code: String = (&stack).iter().collect();
+
+        println!("\n===========");
+
+        Ok(Part{
+            ty,
+            position,
+            style,
+            title_width,
+            text_alignment,
+            font_id,
+            font_size,
+            text_flags,
+            line_height,
+            name,
+            script: code,
+            contents: None,
+        })
+    }
 }

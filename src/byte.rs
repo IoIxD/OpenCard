@@ -69,3 +69,28 @@ pub fn i16_from_i8(b: &[i8]) -> i16 {
     ((b[0] as i16) <<  8) +
     ((b[1] as i16) <<  0)
 }
+
+macro_rules! byte_range {
+    (all, $arr:ident, $pkg:ident::$name:ident) => {
+        paste::item! {
+            &$arr[$pkg::[< $name Start >]()..$pkg::[< $name End >]()]
+        }
+    };
+    (all, $arr:ident, $offset:stmt, $pkg:ident::$name:ident) => {
+        paste::item! {
+            &$arr[$offset+$pkg::[< $name Start >]()..$offset+$pkg::[< $name End >]()]
+        }
+    };
+    ($ty:ident, $arr:ident, $pkg:ident::$name:ident) => {
+        paste::item! {
+            crate::byte::[< $ty _from_u8 >](&$arr[$pkg::[< $name Start >]()..$pkg::[< $name End >]()])
+        }
+    };
+    ($ty:ident, $arr:ident, $offset:stmt, $pkg:ident::$name:ident) => {
+        paste::item! {
+            crate::byte::[< $ty _from_u8 >](&$arr[$offset+$pkg::[< $name Start >]()..$offset+$pkg::[< $name End >]()])
+        }
+    };
+}
+
+pub(crate) use byte_range;

@@ -99,3 +99,44 @@ enum BitmapLayout {
     #[ahead(4)] MaskDataSize,
     #[ahead(4)] ImageDataSize
 }
+
+#[layout(CardLayout)]
+enum CardLayout {
+    #[ahead(4)] BlockSize,
+    #[ahead(4)] BlockCard,
+    #[ahead(4)] BlockID,
+    #[ahead(4)] Filler0,
+    #[ahead(4)] BitmapID,
+    #[ahead(2)] Flags,
+    #[ahead(2)] AlignmentShort1,
+    #[ahead(8)] SkipToOffset0x20,
+    #[ahead(4)] ParentPageID,
+    #[ahead(4)] BackgroundID,
+    #[ahead(2)] PartNum,
+    #[ahead(2)] NewPartID,
+    #[ahead(4)] PartListSize,
+    #[ahead(2)] PartContentNum,
+    #[ahead(4)] PartContentListSize,
+}
+
+#[layout(PartLayout)]
+enum PartLayout {
+    #[ahead(2)] PartEntrySize,
+    #[ahead(2)] PartID,
+    #[ahead(1)] PartType,
+    #[ahead(1)] Flags,
+    #[ahead(2)] PartRectTop,
+    #[ahead(2)] PartRectLeft,
+    #[ahead(2)] PartRectBottom,
+    #[ahead(2)] PartRectRight,
+    #[ahead(1)] TextFlags,
+    #[ahead(1)] Style,
+    #[ahead(2)] TitleWidthOrLastSelectedLine,
+    #[ahead(2)] IconIDOrFirstSelectedLine,
+    #[ahead(2)] TextAlignment,
+    #[ahead(2)] TextFontID,
+    #[ahead(2)] TextSize,
+    #[ahead(1)] TextStyleFlags,
+    #[ahead(1)] Filler0,
+    #[ahead(2)] LineHeight,
+}
