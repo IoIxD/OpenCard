@@ -15,6 +15,7 @@ pub struct picture<'a> {
     bitmaplength: ffi::c_int,
     bitmap: &'a ffi::CStr,
     masklength: ffi::c_int,
+    masklength_redundant: ffi::c_int,
     mask: &'a ffi::CStr,
 }
 
@@ -42,18 +43,21 @@ impl<'a> picture<'a> {
         [j.as_bytes(), (&self).bitmap_raw()].concat()
     }
     pub fn mask_raw(&self) -> Option<&[u8]> {
-        if self.masklength <= 0 || self.masklength as u32 >= u32::MAX as u32 {
+        // redundany check: check if the struct above read the correct mask length by seeing if it read it twice
+        if self.masklength != self.masklength_redundant {
+            // this means the program is reading invalid memory, which indicates that there is no mask.
             None
         } else {
             Some(&self.mask.to_bytes()[..self.masklength as usize - 1])
         }
     }
     pub fn mask_pbm(&self) -> Option<Vec<u8>> {
-        if self.masklength <= 0 || self.masklength as u32 >= u32::MAX as u32 {
-            None
-        } else {
-            let j = format!("P4 {} {} ",&self.width(),&self.height());
-            Some([j.as_bytes(), (&self).mask_raw().unwrap()].concat())
+        match (&self).mask_raw() {
+            Some(a) => {
+                let j = format!("P4 {} {} ",&self.width(),&self.height());
+                Some([j.as_bytes(), a].concat())
+            },
+            None => None
         }
     }
 }

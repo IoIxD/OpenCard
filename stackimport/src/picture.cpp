@@ -32,6 +32,7 @@
 #include "picture.h"
 #include "woba.h"
 #include "CBuf.h"
+#include <limits.h>
 
 using namespace std;
 
@@ -80,6 +81,7 @@ picture::picture(void)
 	maskrowlength = 0;
 	bitmaplength = 0;
 	masklength = 0;
+	masklength_redundant = 0;
 }
 
 picture::picture(int w, int h, int d, bool greymask)
@@ -92,6 +94,7 @@ picture::picture(int w, int h, int d, bool greymask)
 	maskrowlength = __bitmap_row_width(w,h,greymask?8:1);
 	bitmaplength = __bitmap_size(w,h,d);
 	masklength = __bitmap_size(w,h,greymask?8:1);
+	masklength_redundant = masklength;
 	bitmap = new char[bitmaplength];
 	mask = new char[masklength];
 	memset(bitmap,0,bitmaplength);
@@ -124,6 +127,7 @@ void picture::reinit(int w, int h, int d, bool greymask)
 	maskrowlength = __bitmap_row_width(w,h,greymask?8:1);
 	bitmaplength = __bitmap_size(w,h,d);
 	masklength = __bitmap_size(w,h,greymask?8:1);
+	masklength_redundant = masklength;
 	bitmap = new char[bitmaplength];
 	mask = new char[masklength];
 	memset(bitmap,0,bitmaplength);

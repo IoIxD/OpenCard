@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use crate::byte;
 use crate::macroman::macroman_to_char;
 
@@ -7,12 +5,11 @@ use crate::byte::byte_range;
 
 use eyre::{eyre,ErrReport};
 
-use super::font::Font;
-use super::style::Style;
 use super::data_layout::PartLayout as p;
 use super::data_layout::PartContentEntryLayout as pc;
-use super::data_layout::StyleDataLayout as st;
+use super::data_layout::PartContentEntryStyleLayout as st;
 
+#[derive(Debug,Clone)]
 pub struct Part {
     ty: PartType,
 
@@ -33,19 +30,21 @@ pub struct Part {
     contents: Vec<ContentEntry>,
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct ContentEntry {
     id: u16,
     styles: Option<Vec<ContentEntryStyle>>,
     text: String,
 }
 
+#[derive(Debug,Clone)]
 pub enum PartType {
     Button,
     Field,
     Unknown
 }
 
+#[derive(Debug,Clone)]
 pub enum PartStyle {
     Transparent,
     Opaque,
@@ -62,6 +61,7 @@ pub enum PartStyle {
     Unknown
 }
 
+#[derive(Debug,Clone)]
 pub enum TextAlignment {
     Left,
     Center,
@@ -71,7 +71,8 @@ pub enum TextAlignment {
     ForceRightAlign,
     Unknown
 }
-#[derive(Debug)]
+
+#[derive(Debug,Clone)]
 pub struct ContentEntryStyle {
     text_position: u16,
     id: u16,
@@ -158,10 +159,9 @@ impl Part {
         let mut content_entries: Vec<ContentEntry> = Vec::new();
 
         // part content entry
-        for i in 0..part_content_num {
+        for _ in 0..part_content_num {
             let block = &b[offset..offset+part_content_list_size as usize];
-            let id = byte_range!(u16, b, pc::PartID);
-            let entry_len = byte_range!(u16, b, pc::EntryLength);
+            let id = byte_range!(u16, block, pc::PartID);
 
             let tmp = &b[pc::PlainTextMarkerOrStyleLengthByte1Start()];
             // if that first byte is 0 then there's no styles.
@@ -174,12 +174,12 @@ impl Part {
                 let mut style_length = byte::u16_from_u8(&b[pc::PlainTextMarkerOrStyleLengthByte1Start()..pc::StyleLengthByte2End()]);
                 style_length &= i16::MAX as u16;
                 style_length /= 4;
-                for n in 0..style_length {
-                    let styleblock = &b[noffset..noffset+(style_length*0x04) as usize];
+                for _ in 0..style_length {
+                    let styleblock = &b[noffset..noffset+0x04 as usize];
                     let text_position = byte_range!(u16, styleblock, st::TextPosition);
                     let id2 = byte_range!(u16, styleblock, st::StyleID);
                     tstyles.push(ContentEntryStyle { text_position, id: id2 });
-                    noffset += (style_length*0x04) as usize;
+                    noffset += 0x04 as usize;
                 }
                 styles = Some(tstyles);
             }

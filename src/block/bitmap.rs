@@ -5,9 +5,9 @@ use image::{GrayImage};
 use image::io::Reader as ImageReader;
 
 use super::data_layout::BitmapLayout as bi;
-use crate::{byte};
 use stackimport::decode;
 
+#[derive(Debug,Clone)]
 pub struct Bitmap {
     pub image: GrayImage,
 }

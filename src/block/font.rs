@@ -1,5 +1,6 @@
-pub struct Font<'a> {
+#[derive(Debug,Clone)]
+pub struct Font {
     id: u16,
-    name: &'a str,
+    name: String,
 }
 

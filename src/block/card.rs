@@ -5,6 +5,7 @@ use super::data_layout::CardLayout as c;
 use crate::byte::{self, byte_range};
 use crate::macroman::macroman_to_char;
 
+#[derive(Debug,Clone)]
 pub struct Card {
     id: u32,
     bitmap_block_id: u32,
@@ -23,25 +24,20 @@ impl Card {
         let id = byte_range!(u32,b,c::BlockID);
         let bitmap_block_id = byte_range!(u32,b,c::BitmapID);
         let flags = byte_range!(u16,b,c::Flags);
-        let parent_page_id = byte_range!(u32, b, c::ParentPageID);
-        let background_id = byte_range!(u32, b, c::BackgroundID);
         let part_num = byte_range!(u16, b, c::PartNum);
-        let part_list_size = byte_range!(u32, b, c::PartListSize);
         let part_content_num = byte_range!(u16, b, c::PartContentNum);
         let part_content_list_size = byte_range!(u32, b, c::PartContentListSize);
 
         let mut offset = c::PartContentListSizeEnd();
-        let mut old_offset = offset;
         let mut parts: Vec<Part> = Vec::new();
+        #[allow(unused_assignments)]
         let mut part_size = 0;
         for i in 0..part_num {
-            //println!("{:#09x}",offset);
             // i don't know
             if offset + 0x02 >= parts.len() {
                 continue
             }
             part_size = byte::u16_from_u8(&b[offset..offset + 0x02]);
-            //println!("{}",part_size);
             let part = match Part::from(&b[
                 (offset+(i*part_size) as usize)..
                 (offset+((i+1)*part_size) as usize)
@@ -64,9 +60,7 @@ impl Card {
             // offset is now at the "optional OSA script data".
             // skip this.
             part_size = byte::u16_from_u8(&b[offset..offset + 0x02]);
-            //println!("osa size: {}",part_size);
             offset += (part_size/8) as usize;
-            //offset += new_offset;
         };
 
         // name and stack script, both terminated by nil

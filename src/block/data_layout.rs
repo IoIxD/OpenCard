@@ -149,8 +149,46 @@ enum PartContentEntryLayout {
     #[ahead(1)] StyleLengthByte2,
 }
 
-#[layout(StyleDataLayout)]
-enum StyleDataLayout {
+#[layout(PartContentEntryStyleLayout)]
+enum PartContentEntryStyleLayout {
     #[ahead(2)] TextPosition,
     #[ahead(2)] StyleID,
+}
+
+#[layout(StyleTableLayout)]
+enum StyleTableLayout {
+    #[ahead(4)] BlockSize,
+    #[ahead(4)] BlockType,
+    #[ahead(4)] BlockID,
+    #[ahead(4)] Filler0,
+    #[ahead(4)] StyleNum,
+    #[ahead(4)] NextStyleID
+}
+
+#[layout(StyleLayout)]
+enum StyleLayout {
+    #[ahead(4)] StyleID,
+    #[ahead(8)] UnknownAndUnused,
+    #[ahead(2)] FontID,
+    #[ahead(2)] StyleFlags,
+    #[ahead(2)] FontSize,
+}
+
+#[layout(BackgroundLayout)]
+enum BackgroundLayout {
+    #[ahead(4)] BlockSize,
+    #[ahead(4)] BlockType,
+    #[ahead(4)] BlockID,
+    #[ahead(4)] Filler0,
+    #[ahead(4)] BitmapID,
+    #[ahead(2)] Flags,
+    #[ahead(2)] AlignmentShort1,
+    #[ahead(4)] CardNum,
+    #[ahead(4)] NextBackgroundID,
+    #[ahead(4)] PreviousBackgroundID,
+    #[ahead(2)] PartNum,
+    #[ahead(2)] NewPartID,
+    #[ahead(4)] PartListSize,
+    #[ahead(2)] PartContentNum,
+    #[ahead(4)] PartContentListSize,
 }

@@ -109,7 +109,7 @@ class picture
 	void readfile(char *);
 	
 	private:
-	
+
 	int width;
 	int height;
 	int depth;
@@ -120,6 +120,7 @@ class picture
 	int bitmaplength;
 	char * bitmap;
 	int masklength;
+	int masklength_redundant;
 	char * mask;
 };
 
