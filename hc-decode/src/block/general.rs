@@ -1,15 +1,19 @@
+use eyre::{eyre, ErrReport};
+
 use std::collections::HashMap;
 
-use super::{bitmap::Bitmap, font::Font, background::Background, style::Style, card::Card, part::Part};
+use super::{
+    background::Background, bitmap::Bitmap, card::Card, font::Font, part::Part, style::Style,
+};
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub enum Block {
     Background(Background),
     Bitmap(Bitmap),
     Card(Card),
     Font(Font),
     Part(Part),
-    Style(HashMap<u32, Style>)
+    Style(HashMap<u32, Style>),
 }
 
 impl Block {

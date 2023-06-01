@@ -1,15 +1,14 @@
-use crate::byte;
 use crate::macroman::macroman_to_char;
 
-use crate::byte::byte_range;
+use crate::byte::{self, byte_range};
 
-use eyre::{eyre,ErrReport};
+use eyre::{eyre, ErrReport};
 
-use super::data_layout::PartLayout as p;
 use super::data_layout::PartContentEntryLayout as pc;
 use super::data_layout::PartContentEntryStyleLayout as st;
+use super::data_layout::PartLayout as p;
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct Part {
     ty: PartType,
 
@@ -30,21 +29,21 @@ pub struct Part {
     contents: Vec<ContentEntry>,
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct ContentEntry {
     id: u16,
     styles: Option<Vec<ContentEntryStyle>>,
     text: String,
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub enum PartType {
     Button,
     Field,
-    Unknown
+    Unknown,
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub enum PartStyle {
     Transparent,
     Opaque,
@@ -58,10 +57,10 @@ pub enum PartStyle {
     Default,
     Oval,
     Popup,
-    Unknown
+    Unknown,
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub enum TextAlignment {
     Left,
     Center,
@@ -69,17 +68,21 @@ pub enum TextAlignment {
     ForceLeftAlign,
     ForceCenterAlign,
     ForceRightAlign,
-    Unknown
+    Unknown,
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct ContentEntryStyle {
     text_position: u16,
     id: u16,
 }
 
 impl Part {
-    pub fn from(b: &[u8], part_content_num: u16, part_content_list_size: u32) -> Result<Self, ErrReport> {
+    pub fn from(
+        b: &[u8],
+        part_content_num: u16,
+        part_content_list_size: u32,
+    ) -> Result<Self, ErrReport> {
         let ty = match byte_range!(u16, b, p::PartID) {
             0 => PartType::Button,
             1 => PartType::Field,
@@ -89,7 +92,7 @@ impl Part {
             byte_range!(u16, b, p::PartRectTop),
             byte_range!(u16, b, p::PartRectLeft),
             byte_range!(u16, b, p::PartRectBottom),
-            byte_range!(u16, b, p::PartRectRight)
+            byte_range!(u16, b, p::PartRectRight),
         );
 
         let style = match &b[p::StyleStart()] {
@@ -160,7 +163,7 @@ impl Part {
 
         // part content entry
         for _ in 0..part_content_num {
-            let block = &b[offset..offset+part_content_list_size as usize];
+            let block = &b[offset..offset + part_content_list_size as usize];
             let id = byte_range!(u16, block, pc::PartID);
 
             let tmp = &b[pc::PlainTextMarkerOrStyleLengthByte1Start()];
@@ -171,14 +174,19 @@ impl Part {
                 noffset += pc::StyleLengthByte2End();
                 let mut tstyles: Vec<ContentEntryStyle> = Vec::new();
                 // get the 'style length'; but negate the first bit because it's always set.
-                let mut style_length = byte::u16_from_u8(&b[pc::PlainTextMarkerOrStyleLengthByte1Start()..pc::StyleLengthByte2End()]);
+                let mut style_length = byte::u16_from_u8(
+                    &b[pc::PlainTextMarkerOrStyleLengthByte1Start()..pc::StyleLengthByte2End()],
+                );
                 style_length &= i16::MAX as u16;
                 style_length /= 4;
                 for _ in 0..style_length {
-                    let styleblock = &b[noffset..noffset+0x04 as usize];
+                    let styleblock = &b[noffset..noffset + 0x04 as usize];
                     let text_position = byte_range!(u16, styleblock, st::TextPosition);
                     let id2 = byte_range!(u16, styleblock, st::StyleID);
-                    tstyles.push(ContentEntryStyle { text_position, id: id2 });
+                    tstyles.push(ContentEntryStyle {
+                        text_position,
+                        id: id2,
+                    });
                     noffset += 0x04 as usize;
                 }
                 styles = Some(tstyles);
@@ -194,17 +202,13 @@ impl Part {
                 noffset += 1;
             }
             let text: String = (&stack).iter().collect();
-            content_entries.push(ContentEntry {
-                id,
-                styles,
-                text,
-            });
+            content_entries.push(ContentEntry { id, styles, text });
             offset += part_content_list_size as usize;
         }
 
         println!("\n===========");
 
-        Ok(Part{
+        Ok(Part {
             ty,
             position,
             style,

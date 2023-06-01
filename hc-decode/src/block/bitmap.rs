@@ -1,13 +1,15 @@
+use eyre::{eyre, ErrReport};
+
 use std::error::Error;
 use std::io::Cursor;
 
-use image::{GrayImage};
 use image::io::Reader as ImageReader;
+use image::GrayImage;
 
 use super::data_layout::BitmapLayout as bi;
 use stackimport::decode;
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct Bitmap {
     pub image: GrayImage,
 }
@@ -22,15 +24,15 @@ impl Bitmap {
         let mpbm: Option<Vec<u8>> = p.mask_pbm();
         let blpbm: Vec<u8> = p.blank_pbm();
         let image = match mpbm {
-            Some(a) => {
-                ImageReader::new(Cursor::new([bpbm,a].concat())).with_guessed_format()?.decode()?
-            }
-            None => {
-                ImageReader::new(Cursor::new([bpbm,blpbm].concat())).with_guessed_format()?.decode()?
-            }
+            Some(a) => ImageReader::new(Cursor::new([bpbm, a].concat()))
+                .with_guessed_format()?
+                .decode()?,
+            None => ImageReader::new(Cursor::new([bpbm, blpbm].concat()))
+                .with_guessed_format()?
+                .decode()?,
         };
-        Ok(Bitmap{
-            image: image.as_luma8().unwrap().clone()
+        Ok(Bitmap {
+            image: image.as_luma8().unwrap().clone(),
         })
     }
 }

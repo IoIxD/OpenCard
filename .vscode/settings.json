@@ -112,5 +112,11 @@
         "stdbool.h": "c",
         "string.h": "c",
         "woba.h": "c"
-    }
+    },
+    "rust-analyzer.linkedProjects": [
+        "./Cargo.toml",
+        "./hc-decode/Cargo.toml",
+        "./hc-decode/Cargo.toml",
+        "./hc-decode/Cargo.toml"
+    ]
 }
