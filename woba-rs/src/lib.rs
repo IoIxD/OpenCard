@@ -1,6 +1,9 @@
-use ascii_converter::decimals_to_string;
 use eyre::eyre;
-use std::{error::Error, ffi};
+use image::io::Reader as ImageReader;
+use image::GrayImage;
+use std::error::Error;
+use std::ffi;
+use std::io::Cursor;
 
 #[derive(Debug)]
 #[repr(C)]
@@ -37,20 +40,37 @@ impl<'a> picture<'a> {
     pub fn greyscalemask(&self) -> bool {
         *&self.greyscalemask == 1
     }
-    // The raw bitmap of the
-    pub fn bitmap_raw(&self) -> &[u8] {
+    pub fn as_image(self) -> Result<GrayImage, Box<dyn Error>> {
+        let bpbm = self.bitmap_pbm();
+        let mpbm = self.mask_pbm();
+        let blpbm = self.blank_pbm();
+        let image = match mpbm {
+            Some(a) => ImageReader::new(Cursor::new([bpbm, a].concat()))
+                .with_guessed_format()?
+                .decode()?,
+            None => ImageReader::new(Cursor::new([bpbm, blpbm].concat()))
+                .with_guessed_format()?
+                .decode()?,
+        };
+        Ok(image.as_luma8().unwrap().clone())
+    }
+
+    fn bitmap_raw(&self) -> &[u8] {
         &self.bitmap.to_bytes()[..self.bitmaplength as usize - 1]
     }
-    pub fn blank_pbm(&self) -> Vec<u8> {
+
+    fn blank_pbm(&self) -> Vec<u8> {
+        // ...why is this a thing again?
         format!("P4 {} {} ", &self.width(), &self.height())
             .as_bytes()
             .to_vec()
     }
-    pub fn bitmap_pbm(&self) -> Vec<u8> {
+
+    fn bitmap_pbm(&self) -> Vec<u8> {
         let j = format!("P4 {} {} ", &self.width(), &self.height());
         [j.as_bytes(), (&self).bitmap_raw()].concat()
     }
-    pub fn mask_raw(&self) -> Option<&[u8]> {
+    fn mask_raw(&self) -> Option<&[u8]> {
         // redundany check: check if the struct above read the correct mask length by seeing if it read it twice
         if self.masklength != self.masklength_redundant {
             // this means the program is reading invalid memory, which indicates that there is no mask.
@@ -59,7 +79,8 @@ impl<'a> picture<'a> {
             Some(&self.mask.to_bytes()[..self.masklength as usize - 1])
         }
     }
-    pub fn mask_pbm(&self) -> Option<Vec<u8>> {
+
+    fn mask_pbm(&self) -> Option<Vec<u8>> {
         match (&self).mask_raw() {
             Some(a) => {
                 let j = format!("P4 {} {} ", &self.width(), &self.height());
@@ -86,7 +107,7 @@ pub fn decode(b: &[u8]) -> Result<picture, eyre::ErrReport> {
     let p: picture;
     unsafe {
         p = new_picture_with_params(0, 0, 0, 0);
-        woba_decode(&p, &ffi::CStr::from_bytes_with_nul(b)?);
+        woba_decode(&p, &ffi::CStr::from_bytes_with_nul_unchecked(b));
 
         let err = get_error_str();
         if err.to_bytes().len() > 1 && err.to_bytes().len() < i32::MAX as usize {
