@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 hc-decode = {path = "./hc-decode"}
-woba = {path = "./woba"}
+woba = {path = "./woba-rs"}
 
 clap = { version = "4.0.32", features = ["derive"] }
 image = "0.24.5"
