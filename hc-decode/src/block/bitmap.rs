@@ -7,7 +7,7 @@ use image::io::Reader as ImageReader;
 use image::GrayImage;
 
 use super::data_layout::BitmapLayout as bi;
-use stackimport::decode;
+use woba::decode;
 
 #[derive(Debug, Clone)]
 pub struct Bitmap {

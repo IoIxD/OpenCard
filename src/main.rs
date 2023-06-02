@@ -20,7 +20,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             match File::read(&mut a, b) {
                 Ok(_) => {
                     let j = Stack::from(&b).await?;
-                    println!("{}", j.version.0);
+                    println!("{:?}", j);
                 }
                 Err(err) => {
                     println!("{}", err);

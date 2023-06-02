@@ -368,7 +368,7 @@ dependencies = [
  "futures",
  "image",
  "paste",
- "stackimport",
+ "woba",
 ]
 
 [[package]]
@@ -709,15 +709,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "stackimport"
-version = "0.1.0"
-dependencies = [
- "ascii_converter",
- "cc",
- "eyre",
-]
-
-[[package]]
 name = "syn"
 version = "1.0.109"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -926,6 +917,15 @@ name = "windows_x86_64_msvc"
 version = "0.48.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1a515f5799fe4961cb532f983ce2b23082366b898e52ffbce459c86f67c8378a"
+
+[[package]]
+name = "woba"
+version = "0.1.0"
+dependencies = [
+ "ascii_converter",
+ "cc",
+ "eyre",
+]
 
 [[package]]
 name = "zune-inflate"
