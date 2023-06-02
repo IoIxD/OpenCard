@@ -29,7 +29,7 @@
 
 */
 
-#define DEBUGOUTPUT		0
+#define DEBUGOUTPUT		1
 
 
 #if DEBUGOUTPUT
@@ -56,7 +56,7 @@ inline int __min(int x, int y)
 
 
 void woba_decode_cxx(picture & p, char * woba)
-{
+{	
 	#if DEBUGOUTPUT
 	std::cout << "===== NEXT BMAP =====" << endl;
 	#endif
@@ -166,7 +166,7 @@ void woba_decode_cxx(picture & p, char * woba)
 			while( j < maskDataLength )
 			{
 				opcode = (unsigned char)woba[i];
-				
+				printf("opcode: %d\n",opcode);
 				#if DEBUGOUTPUT
 				std::cout << "Opcode: " << __hex(opcode) << endl;
 				std::cout << "Repeat: " << repeat << endl;
@@ -724,12 +724,15 @@ extern "C" {
 		return error_str;
 	}
 
-	void woba_decode(picture & p, char * woba) {
+	picture * woba_decode(picture & p, char * woba) {
+		printf("DECODING\n");
 		try {
 			woba_decode_cxx(p, woba);
+			return &p;
 		} catch(...) {
 			std::exception_ptr p = std::current_exception();
 			error_str = (char*)(p ? p.__cxa_exception_type()->name() : "null");
+			return nullptr;
 		}
 	}
 }

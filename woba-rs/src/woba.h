@@ -36,7 +36,7 @@
 using namespace std;
 
 extern "C" {
-    void woba_decode(picture & p, char * woba);
+    picture * woba_decode(picture & p, char * woba);
 }
 
 #endif

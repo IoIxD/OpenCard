@@ -1,7 +1,7 @@
 use clap::Parser;
 use std::{error::Error, fs::File, io::Read};
 
-use hc_decode::block::stack::Stack;
+use hc_decode::block::{general::Block, stack::Stack};
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -20,7 +20,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
             match File::read(&mut a, b) {
                 Ok(_) => {
                     let j = Stack::from(&b).await?;
-                    println!("{:?}", j);
+                    for (i, obj) in j.objects {
+                        if let Block::Bitmap(a) = obj {
+                            a.image.save(format!("{}.png", i))?;
+                        };
+                    }
                 }
                 Err(err) => {
                     println!("{}", err);
