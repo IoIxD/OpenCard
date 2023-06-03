@@ -1,5 +1,5 @@
 #[derive(Debug, Clone)]
 pub struct Font {
-    id: u16,
-    name: String,
+    pub id: u16,
+    pub name: String,
 }

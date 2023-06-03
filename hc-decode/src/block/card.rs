@@ -9,13 +9,13 @@ use crate::macroman::macroman_to_char;
 
 #[derive(Debug, Clone)]
 pub struct Card {
-    id: u32,
-    bitmap_block_id: u32,
-    flags: u16,
-    parts: Vec<Part>,
+    pub id: u32,
+    pub bitmap_block_id: u32,
+    pub flags: u16,
+    pub parts: Vec<Part>,
 
-    name: String,
-    script: String,
+    pub name: String,
+    pub script: String,
 }
 
 impl Card {
@@ -87,6 +87,7 @@ impl Card {
             if ch == 0 {
                 break;
             }
+
             stack.push(macroman_to_char(ch)); // blindly unwrap because we can be certain it's a valid mac roman character
             offset += 1;
         }

@@ -8,16 +8,16 @@ use super::part::Part;
 
 #[derive(Debug, Clone)]
 pub struct Background {
-    bitmap_id: u32,
-    flags: u16,
+    pub bitmap_id: u32,
+    pub flags: u16,
 
-    cards_num: u32,
-    parts: Vec<Part>,
-    next: u32,
-    prev: u32,
+    pub cards_num: u32,
+    pub parts: Vec<Part>,
+    pub next: u32,
+    pub prev: u32,
 
-    name: String,
-    script: String,
+    pub name: String,
+    pub script: String,
 }
 
 impl Background {

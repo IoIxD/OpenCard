@@ -177,6 +177,10 @@ impl Stack {
             ));
         }
 
+        // ...or was it?
+        let checksum = bytes[0..0x5FF].iter().map(|f| *f as i32).sum::<i32>();
+        println!("Checksum is {}", checksum);
+
         let stack_size = byte_range!(u32, bytes, st::BlockSize);
 
         let format_raw = byte_range!(u32, bytes, st::HyperCardFormat);
@@ -249,7 +253,7 @@ impl Stack {
         let style_table: Vec<&Style> = Vec::new();
 
         // skip to 0x600 and get the stack script, which is terminated by 0x00
-        let mut offset = 0x601;
+        let mut offset = 0x600;
         let mut stack: Vec<char> = Vec::new();
         loop {
             let ch = (&bytes)[offset];
@@ -261,14 +265,15 @@ impl Stack {
         }
         let script: String = (&stack).iter().collect();
 
-        // skip to 0x800. we should see the master block.
-        offset = 0x800;
+        // set the offest to the nearest multiple of 4.
+        let remainder = offset % 0x200;
+        offset = offset + 0x200 - remainder;
 
         let block_type =
             str::from_utf8(&bytes[offset + gen::BlockTypeStart()..offset + gen::BlockTypeEnd()])?;
-        if block_type != "MAST" {
+        /*if block_type != "MAST" {
             return Err(eyre!("Stack block was not followed up by a master block. Not continuing for fear of data corruption or an incompatible file."));
-        }
+        }*/
 
         let block_size = byte_range!(u32, bytes, offset, gen::BlockSize);
 

@@ -8,9 +8,9 @@ use super::data_layout::StyleTableLayout as st;
 
 #[derive(Debug, Clone)]
 pub struct Style {
-    font: i16,
-    style_flags: i16,
-    font_size: i16,
+    pub font: i16,
+    pub style_flags: i16,
+    pub font_size: i16,
 }
 
 impl Style {

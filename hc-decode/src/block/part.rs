@@ -10,23 +10,23 @@ use super::data_layout::PartLayout as p;
 
 #[derive(Debug, Clone)]
 pub struct Part {
-    ty: PartType,
+    pub ty: PartType,
 
-    position: (u16, u16, u16, u16),
-    style: PartStyle,
+    pub position: (u16, u16, u16, u16),
+    pub style: PartStyle,
 
-    title_width: u16,
-    text_alignment: TextAlignment,
+    pub title_width: u16,
+    pub text_alignment: TextAlignment,
 
-    font_id: u16,
-    font_size: u16,
-    text_flags: u8,
+    pub font_id: u16,
+    pub font_size: u16,
+    pub text_flags: u8,
 
-    line_height: u16,
-    name: String,
-    script: String,
+    pub line_height: u16,
+    pub name: String,
+    pub script: String,
 
-    contents: Vec<ContentEntry>,
+    pub contents: Vec<ContentEntry>,
 }
 
 #[derive(Debug, Clone)]
