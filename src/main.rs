@@ -19,11 +19,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let b: &mut Vec<u8> = &mut vec![0; len as usize];
             match File::read(&mut a, b) {
                 Ok(_) => {
-                    let j = Stack::from(&b).await?;
-                    for (i, obj) in j.objects {
-                        if let Block::Bitmap(a) = obj {
-                            a.image.save(format!("{}.png", i))?;
-                        };
+                    let stack = Stack::from(&b).await?;
+                    println!("{}", stack.script.replace("\u{000D}", "\n"));
+                    for card in stack.cards {
+                        println!("{}", card.script.replace("\u{000D}", "\n"));
                     }
                 }
                 Err(err) => {
