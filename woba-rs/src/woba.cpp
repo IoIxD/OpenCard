@@ -29,7 +29,7 @@
 
 */
 
-#define DEBUGOUTPUT		1
+#define DEBUGOUTPUT		0
 
 
 #if DEBUGOUTPUT
@@ -166,7 +166,6 @@ void woba_decode_cxx(picture & p, char * woba)
 			while( j < maskDataLength )
 			{
 				opcode = (unsigned char)woba[i];
-				printf("opcode: %d\n",opcode);
 				#if DEBUGOUTPUT
 				std::cout << "Opcode: " << __hex(opcode) << endl;
 				std::cout << "Repeat: " << repeat << endl;
@@ -725,7 +724,6 @@ extern "C" {
 	}
 
 	picture * woba_decode(picture & p, char * woba) {
-		printf("DECODING\n");
 		try {
 			woba_decode_cxx(p, woba);
 			return &p;
