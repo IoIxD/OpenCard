@@ -1,3 +1,4 @@
-pub mod block;
-pub mod byte;
-pub mod macroman;
+mod block;
+pub(crate) mod byte;
+pub(crate) mod macroman;
+pub use block::*;

@@ -1,7 +1,7 @@
 use clap::Parser;
 use std::{error::Error, fs::File, io::Read};
 
-use hc_decode::block::{general::Block, stack::Stack};
+use hc_decode::{stack::Stack, Block};
 
 #[derive(Parser, Debug)]
 struct Args {
