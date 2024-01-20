@@ -1,9 +1,11 @@
 use eyre::{eyre, ErrReport};
-use futures::future::join_all;
 
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fmt::Display;
+use std::fs::File;
+use std::io::Read;
+use std::path::Path;
 use std::str;
 
 use crate::block::bitmap::Bitmap;
@@ -159,7 +161,18 @@ pub struct Stack {
 }
 
 impl Stack {
-    pub async fn from(bytes: &[u8]) -> Result<Stack, ErrReport> {
+    pub fn from_path(path: &Path) -> Result<Stack, ErrReport> {
+        Self::from_file(File::open(path)?)
+    }
+    pub fn from_file(mut file: File) -> Result<Stack, ErrReport> {
+        println!("from_file");
+        let len = file.metadata()?.len();
+        let b: &mut Vec<u8> = &mut vec![0; len as usize];
+        File::read(&mut file, b)?;
+        Self::from_bytes(&b)
+    }
+    pub fn from_bytes(bytes: &[u8]) -> Result<Stack, ErrReport> {
+        println!("from_bytes");
         // if the size of the file isn't even 8 bytes, it's invalid.
         if bytes.len() < 8 {
             return Err(eyre!(
@@ -195,10 +208,6 @@ impl Stack {
         };
 
         println!("Loading a {:?} formatted stack", format);
-
-        // backgrounds
-        let backgrounds: Vec<Background> = Vec::new();
-        let cards: Vec<Card> = Vec::new();
 
         let first_background_id = byte_range!(u32, bytes, st::FirstBackgroundID);
         let first_card_id = byte_range!(u32, bytes, st::FirstCardID);
@@ -248,10 +257,6 @@ impl Stack {
             byte_range!(u16, bytes, st::Height),
         );
 
-        // tables
-        let font_table: Vec<&Font> = Vec::new();
-        let style_table: Vec<&Style> = Vec::new();
-
         // skip to 0x600 and get the stack script, which is terminated by 0x00
         let mut offset = 0x600;
         let mut stack: Vec<char> = Vec::new();
@@ -271,9 +276,9 @@ impl Stack {
 
         let block_type =
             str::from_utf8(&bytes[offset + gen::BlockTypeStart()..offset + gen::BlockTypeEnd()])?;
-        /*if block_type != "MAST" {
+        if block_type != "MAST" {
             return Err(eyre!("Stack block was not followed up by a master block. Not continuing for fear of data corruption or an incompatible file."));
-        }*/
+        }
 
         let block_size = byte_range!(u32, bytes, offset, gen::BlockSize);
 
@@ -296,7 +301,7 @@ impl Stack {
 
             master_table.insert(id, location);
         }
-        let mut futures = vec![];
+        let mut objects: HashMap<u32, Block> = HashMap::new();
         // loop through all the pointers we got and construct blocks off of them.
         // we construct futures that do this so that we can use multithreading
         for (id, location) in &master_table {
@@ -311,15 +316,10 @@ impl Stack {
             };
             let block_size = byte_range!(u32, bytes, *location as usize, gen::BlockSize);
             let chunk = &bytes[*location as usize..*location as usize + block_size as usize];
-            futures.push(stack_parse(*location, *id, block_type.to_string(), chunk));
+            if let Some((k, v)) = stack_parse(*location, *id, block_type.to_string(), chunk) {
+                objects.insert(k, v);
+            };
         }
-        let objects: HashMap<u32, Block> = join_all(futures.into_iter())
-            .await
-            .into_iter()
-            .filter(|f| f.is_some())
-            .map(|f| f.unwrap())
-            .collect();
-
         let j = objects.clone();
 
         // the final stretch
@@ -408,12 +408,7 @@ fn filter_styles(objects: &HashMap<u32, Block>) -> Option<HashMap<u32, Style>> {
     None
 }
 
-async fn stack_parse(
-    location: u32,
-    id: u8,
-    block_type: String,
-    chunk: &[u8],
-) -> Option<(u32, Block)> {
+fn stack_parse(location: u32, id: u8, block_type: String, chunk: &[u8]) -> Option<(u32, Block)> {
     let block_id = byte_range!(u32, chunk, gen::BlockID);
     match block_type.as_str() {
         "LIST" | "PAGE" => {

@@ -1,5 +1,5 @@
 use clap::Parser;
-use std::{error::Error, fs::File, io::Read};
+use std::{error::Error, fs::File, io::Read, path::Path};
 
 use hc_decode::{stack::Stack, Block};
 
@@ -13,21 +13,11 @@ struct Args {
 async fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
     println!("{}", &args.path);
-    match File::open(&args.path) {
-        Ok(mut a) => {
-            let len = a.metadata()?.len();
-            let b: &mut Vec<u8> = &mut vec![0; len as usize];
-            match File::read(&mut a, b) {
-                Ok(_) => {
-                    let stack = Stack::from(&b).await?;
-                    println!("{}", stack.script.replace("\u{000D}", "\n"));
-                    for card in stack.cards {
-                        println!("{}", card.script.replace("\u{000D}", "\n"));
-                    }
-                }
-                Err(err) => {
-                    println!("{}", err);
-                }
+    match Stack::from_path(&Path::new(&args.path)) {
+        Ok(stack) => {
+            println!("{}", stack.script.replace("\u{000D}", "\n"));
+            for card in stack.cards {
+                println!("{}", card.script.replace("\u{000D}", "\n"));
             }
         }
         Err(err) => {
