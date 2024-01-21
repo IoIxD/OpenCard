@@ -107,7 +107,12 @@ pub fn decode(b: &[u8]) -> Result<picture, eyre::ErrReport> {
     let p: picture;
     unsafe {
         p = new_picture_with_params(0, 0, 0, 0);
+
+        // printing empty strings here lessens the chance of the function segfaulting by an extreme margin.
+        // this should not make sense but remember we're dealing with code written in C++ nothing makes sense in this language.
+        println!(" ");
         woba_decode(&p, &ffi::CStr::from_bytes_with_nul_unchecked(b));
+        println!(" ");
 
         let err = get_error_str();
         if err.to_bytes().len() > 1 && err.to_bytes().len() < i32::MAX as usize {

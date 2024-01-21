@@ -1,4 +1,5 @@
 use clap::Parser;
+use hypertalk::Script;
 use std::{error::Error, fs::File, io::Read, path::Path};
 
 use hc_decode::{stack::Stack, Block};
@@ -15,9 +16,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("{}", &args.path);
     match Stack::from_path(&Path::new(&args.path)) {
         Ok(stack) => {
-            println!("{}", stack.script.replace("\u{000D}", "\n"));
+            let mas_script = Script::parse(stack.script);
+            println!(
+                "{}",
+                format!("{:?}", mas_script.commands).replace("),", "),\n")
+            );
             for card in stack.cards {
-                println!("{}", card.script.replace("\u{000D}", "\n"));
+                let script = Script::parse(card.script);
+                println!("{}", format!("{:?}", script.commands).replace("),", "),\n"));
             }
         }
         Err(err) => {

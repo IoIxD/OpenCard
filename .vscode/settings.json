@@ -116,7 +116,6 @@
     "rust-analyzer.linkedProjects": [
         "./Cargo.toml",
         "./hc-decode/Cargo.toml",
-        "./hc-decode/Cargo.toml",
-        "./hc-decode/Cargo.toml"
+        "./hypertalk-rs/Cargo.toml"
     ]
 }

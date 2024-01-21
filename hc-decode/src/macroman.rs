@@ -67,7 +67,7 @@ pub fn macroman_to_char(macroman: u8) -> char {
         191 => 'ø', // o slash
         192 => '¿', // question down
         193 => '¡', // exclamation down
-        194 => '¬', // not
+        194 => '¬', // not. But more often then not, its used before a \n.
         195 => '√',
         196 => 'ƒ', // florin
         197 => '≈',
